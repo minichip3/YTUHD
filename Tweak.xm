@@ -281,7 +281,7 @@ static void hookFormats(MLABRPolicy *self) {
 
 %hook HAMDefaultABRPolicy
 
-- (id)getSelectableFormatDataAndReturnError:(NSError **)error {
+- (NSArray *)getSelectableFormatDataAndReturnError:(NSError **)error {
     [self setValue:@(NO) forKey:@"_postponePreferredFormatFiltering"];
     // @try {
     //     HAMDefaultABRPolicyConfig config = MSHookIvar<HAMDefaultABRPolicyConfig>(self, "_config");
@@ -291,7 +291,8 @@ static void hookFormats(MLABRPolicy *self) {
     //     config.softwareVP9Filter.maxFPS = MAX_FPS;
     //     MSHookIvar<HAMDefaultABRPolicyConfig>(self, "_config") = config;
     // } @catch (id ex) {}
-    return filteredFormats(%orig);
+    NSArray *formats = %orig;
+    return filteredFormats(formats);
 }
 
 - (void)setFormats:(NSArray *)formats {
