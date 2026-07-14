@@ -16,9 +16,10 @@ jobs:
       - name: Install Theos
         uses: Randomblock1/theos-action@v1
 
-      - name: Install YouTubeHeader
+      - name: Install YouTubeHeader and PSHeader
         run: |
           git clone --depth 1 https://github.com/PoomSmart/YouTubeHeader "$THEOS/include/YouTubeHeader"
+          git clone --depth 1 https://github.com/PoomSmart/PSHeader "$THEOS/include/PSHeader"
 
       - name: Install build dependencies
         run: brew install meson ninja
