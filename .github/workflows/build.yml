@@ -24,6 +24,11 @@ jobs:
       - name: Install build dependencies
         run: brew install meson ninja
 
+      - name: Build vendored codec libraries
+        run: |
+          make libvpx
+          make dav1d
+
       - name: Build SIDELOAD package
         run: |
           make clean
