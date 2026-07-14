@@ -34,6 +34,13 @@ jobs:
           make clean
           make package SIDELOAD=1 FINALPACKAGE=1
 
+      - name: Dump symbol table for crash symbolication
+        run: |
+          echo "=== nm -n (all symbols, sorted by address) ==="
+          nm -n .theos/obj/YTUHD.dylib || true
+          echo "=== filteredFormats address ==="
+          nm .theos/obj/YTUHD.dylib | grep filteredFormats || true
+
       - name: Collect artifacts
         run: |
           mkdir -p artifacts
