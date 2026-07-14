@@ -394,12 +394,28 @@ BOOL overrideSupportsCodec = NO;
 }
 
 - (void)prepareDecoderForFormatDescription:(HAMFormatDescription *)formatDescription delegateQueue:(id)delegateQueue {
+    CMVideoCodecType codecType = [formatDescription mediaSubType];
+    if ((!vtSupportsVP9 && codecType == kCMVideoCodecType_VP9) ||
+        (!vtSupportsAV1 && codecType == kCMVideoCodecType_AV1)) {
+        // Codecs we route to our own software decoder are created lazily by
+        // our videoDecoderWithDelegate: hooks (with delegate reuse guarded
+        // there). Don't let YouTube's own pre-warm/cache logic (%orig) create
+        // and cache one of our decoders into _preparedDecoder here, since its
+        // own un-hooked reuse code later reassigns .delegate directly and
+        // crashes if the cached object doesn't match what it expects.
+        return;
+    }
     overrideSupportsCodec = YES;
     %orig;
     overrideSupportsCodec = NO;
 }
 
 - (void)prepareDecoderForFormatDescription:(HAMFormatDescription *)formatDescription setPixelBufferTypeOnlyIfEmpty:(BOOL)setPixelBufferTypeOnlyIfEmpty delegateQueue:(id)delegateQueue {
+    CMVideoCodecType codecType = [formatDescription mediaSubType];
+    if ((!vtSupportsVP9 && codecType == kCMVideoCodecType_VP9) ||
+        (!vtSupportsAV1 && codecType == kCMVideoCodecType_AV1)) {
+        return;
+    }
     overrideSupportsCodec = YES;
     %orig;
     overrideSupportsCodec = NO;
