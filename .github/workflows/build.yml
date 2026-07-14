@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  build-sideload:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install Theos
+        uses: Randomblock1/theos-action@v1
+
+      - name: Install YouTubeHeader
+        run: |
+          git clone --depth 1 https://github.com/PoomSmart/YouTubeHeader "$THEOS/include/YouTubeHeader"
+
+      - name: Install build dependencies
+        run: brew install meson ninja
+
+      - name: Build SIDELOAD package
+        run: |
+          make clean
+          make package SIDELOAD=1 FINALPACKAGE=1
+
+      - name: Collect artifacts
+        run: |
+          mkdir -p artifacts
+          cp .theos/obj/*.dylib artifacts/
+          cp packages/*.deb artifacts/
+          lipo -info artifacts/*.dylib
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: YTUHD-sideload
+          path: artifacts/
