@@ -34,12 +34,35 @@ jobs:
           make clean
           make package SIDELOAD=1 FINALPACKAGE=1
 
+      - name: Build bundled CydiaSubstrate (ellekit)
+        run: |
+          git clone --depth 1 https://github.com/evelyneee/ellekit /tmp/ellekit
+          cd /tmp/ellekit
+          xcodebuild -scheme ellekit -configuration Release \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            -destination 'generic/platform=iOS' BUILD_DIR="build/"
+          ldid -S build/Release-iphoneos/libellekit.dylib
+
       - name: Collect artifacts
         run: |
           mkdir -p artifacts
           cp .theos/obj/*.dylib artifacts/
           cp packages/*.deb artifacts/
-          lipo -info artifacts/*.dylib
+
+          # Bundle a copy of ellekit (Substrate-API compatible) as a relocatable
+          # CydiaSubstrate.framework next to the tweak, since environments like
+          # LiveContainer don't provide the real /Library/Frameworks copy. Point
+          # YTUHD.dylib's dependency at it via @loader_path instead of the
+          # absolute jailbreak path.
+          mkdir -p "artifacts/CydiaSubstrate.framework"
+          cp /tmp/ellekit/build/Release-iphoneos/libellekit.dylib "artifacts/CydiaSubstrate.framework/CydiaSubstrate"
+          install_name_tool -change \
+            /Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate \
+            @loader_path/CydiaSubstrate.framework/CydiaSubstrate \
+            artifacts/YTUHD.dylib
+          ldid -S artifacts/YTUHD.dylib
+
+          lipo -info artifacts/*.dylib artifacts/CydiaSubstrate.framework/CydiaSubstrate
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
