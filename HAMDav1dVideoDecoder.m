@@ -72,6 +72,8 @@ typedef id (*_PixelBufLongFn)(id, SEL,
 
 @implementation YTUHDDav1dVideoDecoder
 
+@synthesize delegate = _delegate;
+
 - (instancetype)initWithDelegate:(id<HAMVideoDecoderDelegate>)delegate
                    delegateQueue:(dispatch_queue_t)delegateQueue
                      decodeQueue:(dispatch_queue_t)decodeQueue
@@ -85,6 +87,7 @@ typedef id (*_PixelBufLongFn)(id, SEL,
     _decodeQueue   = decodeQueue;
     _config        = config;
     _terminated    = NO;
+    _prepared      = NO;
     _dav1dCtx      = NULL;
     atomic_init(&_samplesPendingDecode, 0);
     atomic_init(&_frameEra, 0u);
@@ -101,9 +104,19 @@ typedef id (*_PixelBufLongFn)(id, SEL,
 }
 
 - (void)prepare {
-    dispatch_async(_decodeQueue, ^{
-        [self internalPrepare];
-    });
+    if (_terminated) return;
+    if (_prepared) {
+        __weak id<HAMVideoDecoderDelegate> weakDelegate = _delegate;
+        __weak YTUHDDav1dVideoDecoder *weakSelf = self;
+        dispatch_async(_delegateQueue, ^{
+            [weakDelegate videoDecoderDidPrepare:weakSelf];
+        });
+    } else {
+        _prepared = YES;
+        dispatch_async(_decodeQueue, ^{
+            [self internalPrepare];
+        });
+    }
 }
 
 - (void)terminate {

@@ -34,13 +34,17 @@ static HAMVideoDecoder *prepareDecoder(MLVideoDecoderFactory *self, id delegate,
             CMFormatDescriptionRef preparedFormatDescription = [preparedFormat formatDescription];
             if (CMFormatDescriptionEqual([formatDescription formatDescription], preparedFormatDescription)) {
                 if ([pixelBufferAttributes isEqualToDictionary:[self valueForKey:@"_preparedPixelBufferAttributes"]]) {
-                    [self clearPreparedDecoder];
-                    preparedDecoder.delegate = delegate;
-                    return preparedDecoder;
+                    if ([preparedDecoder respondsToSelector:@selector(setDelegate:)]) {
+                        [self clearPreparedDecoder];
+                        preparedDecoder.delegate = delegate;
+                        return preparedDecoder;
+                    }
+                    HBLogDebug(@"YTUHD - prepared decoder %@ does not support setDelegate:, discarding", preparedDecoder);
                 }
-            }    
+            }
         }
-        [preparedDecoder terminate];
+        if ([preparedDecoder respondsToSelector:@selector(terminate)])
+            [preparedDecoder terminate];
         [self clearPreparedDecoder];
     }
     return nil;
